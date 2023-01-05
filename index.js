@@ -51,6 +51,7 @@ async function run() {
 
         // Database collection
         const headingCollection = client.db('Sapopsa').collection('websiteHeading');
+        const slidersCollection = client.db('Sapopsa').collection('sliders');
 
         /******************************
          *  verify Admin 
@@ -78,10 +79,27 @@ async function run() {
             res.send(title);
         });
 
-        // Update websit heading
-        app.patch('/web-heading', async (req, res) => {
+        // Update websit heading (admin required)
+        app.patch('/web-heading', async (req, res) => { 
 
         });
+
+         /******************************
+         *  Sliders
+         * ****************************/
+
+        //  Get all sliders
+        app.get('/sliders', async (req, res) =>{
+            const sliders = await slidersCollection.find().toArray();
+            res.send(sliders);
+        });
+
+        // Add new slider (admin required)
+        app.post('/sliders', async(req, res)=>{ 
+            const data = req.body;
+            
+        });
+
     }
     finally {
 
