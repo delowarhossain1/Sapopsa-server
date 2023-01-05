@@ -1,10 +1,13 @@
 [
     {
-        "title" : "This is demo slider",
-        "img" : "https://icms-image.slatic.net/images/ims-web/a3fcc2d3-83f1-461e-96b6-03167a629cb8.jpg"
-    },
-    {
-        "title" : "This is demo slider",
-        "img" : "https://icms-image.slatic.net/images/ims-web/a90177ba-d2ee-4596-9d14-76b3747c856d.jpg"
-    }
+        "img" : "https://static-01.daraz.com.bd/p/b3bc623ac69f812e36e22f9d10543e7f.jpg",
+        "title" : "Next T Shirtii 100% Cotton - Genji",
+        "price" : 120,
+        "size" : ["XL", "M","L"],
+        "description" : "In publishing and graphic design, Lorem ipsum is a placeholder text commonly used to demonstrate the visual form of a document or a typeface without relying on meaningful content",
+        "spacification" : ["#TshirtForMan", "#BTSTShirt", "#TshirtForMen"],
+        "displayIMG" : ["https://static-01.daraz.com.bd/p/9843335b4b8e4e6a724ab79723bfd784.jpg", "https://static-01.daraz.com.bd/p/e4309e52778a52fc00a6c9c959cb2f36.jpg"],
+        "thisIsFor" : "male",
+        "category" : "t-shirt"
+    } 
 ]

@@ -52,6 +52,7 @@ async function run() {
         // Database collection
         const headingCollection = client.db('Sapopsa').collection('websiteHeading');
         const slidersCollection = client.db('Sapopsa').collection('sliders');
+        const categoriesCollection = client.db('Sapopsa').collection('categories');
 
         /******************************
          *  verify Admin 
@@ -99,6 +100,27 @@ async function run() {
             const data = req.body;
             
         });
+
+        /******************************
+         *  Categories
+         * ****************************/
+
+        // get all categories
+        app.get('/categories', async(req, res)=>{
+            const categories = await categoriesCollection.find().toArray();
+            res.send(categories);
+        });
+
+        // insert a new categories (admin required)
+        app.post('/categories', async(req, res)=>{
+
+        });
+
+         /******************************
+         *  Products 
+         * ****************************/
+
+        app.get('/')
 
     }
     finally {
