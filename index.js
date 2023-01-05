@@ -53,6 +53,22 @@ async function run() {
         const headingCollection = client.db('Sapopsa').collection('websiteHeading');
 
         /******************************
+         *  verify Admin 
+         * ****************************/
+
+        const verifyAdmin = async (req, res, next) => {
+            const email = req.query.email;
+            const query = { email };
+            const user = await usersCollection.findOne(query);
+
+            if (user?.role === "admin") {
+                return next();
+            } else {
+                return res.status(403).send({ message: "Forbidden access" });
+            }
+        };
+
+        /******************************
          *  Website heading
          * ****************************/
 
