@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
@@ -53,6 +53,9 @@ async function run() {
         const headingCollection = client.db('Sapopsa').collection('websiteHeading');
         const slidersCollection = client.db('Sapopsa').collection('sliders');
         const categoriesCollection = client.db('Sapopsa').collection('categories');
+        const productsCollection = client.db('Sapopsa').collection('products');
+        const usersCollection = client.db('Sapopsa').collection('users');
+        
 
         /******************************
          *  verify Admin 
@@ -81,24 +84,24 @@ async function run() {
         });
 
         // Update websit heading (admin required)
-        app.patch('/web-heading', async (req, res) => { 
+        app.patch('/web-heading', async (req, res) => {
 
         });
 
-         /******************************
-         *  Sliders
-         * ****************************/
+        /******************************
+        *  Sliders
+        * ****************************/
 
         //  Get all sliders
-        app.get('/sliders', async (req, res) =>{
+        app.get('/sliders', async (req, res) => {
             const sliders = await slidersCollection.find().toArray();
             res.send(sliders);
         });
 
         // Add new slider (admin required)
-        app.post('/sliders', async(req, res)=>{ 
+        app.post('/sliders', async (req, res) => {
             const data = req.body;
-            
+
         });
 
         /******************************
@@ -106,21 +109,76 @@ async function run() {
          * ****************************/
 
         // get all categories
-        app.get('/categories', async(req, res)=>{
+        app.get('/categories', async (req, res) => {
             const categories = await categoriesCollection.find().toArray();
             res.send(categories);
         });
 
         // insert a new categories (admin required)
-        app.post('/categories', async(req, res)=>{
+        app.post('/categories', async (req, res) => {
 
         });
 
-         /******************************
-         *  Products 
+        /******************************
+        *  Products 
+        * ****************************/
+
+        //  get latest 6 products
+        app.get('/latest-products', async (req, res) => {
+            const countProducts = await productsCollection.estimatedDocumentCount();
+            const lastSixProducts = countProducts > 6 ? countProducts - 6 : 0;
+            const products = await productsCollection.find().project({
+                img : 1,
+                title : 1,
+                price : 1,
+                description : 1
+            })
+            .limit(6)
+            .skip(lastSixProducts)
+            .toArray();
+
+            res.send(products);
+        });
+
+        // get product by id
+        app.get('/get-product/:id', async(req, res)=>{
+            const id = req.params.id;
+            const query = {_id : ObjectId(id)};
+            const product = await productsCollection.findOne(query);
+            res.send(product);
+        });
+
+
+
+
+
+
+
+
+
+        /******************************
+         *  User management
          * ****************************/
 
-        app.get('/')
+        // Add user, update user and send access token. 
+        app.put('/user', async(req, res)=>{
+            const userInfo = req.body;
+            const email = userInfo.email;
+            const user = {$set : userInfo}
+            const option = { upsert: true }; 
+            const result = await usersCollection.updateOne({email}, user, option);
+            
+            const token = jwt.sign({email}, process.env.ACCESS_TOKEN, {
+                expiresIn: '1m'
+            });
+
+            res.send({result, token});
+        });
+
+        // Is admin
+        app.get('/is-admin', async(req, res)=>{
+            
+        });
 
     }
     finally {
