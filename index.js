@@ -167,7 +167,7 @@ async function run() {
             const user = {$set : userInfo}
             const option = { upsert: true }; 
             const result = await usersCollection.updateOne({email}, user, option);
-            
+
             const token = jwt.sign({email}, process.env.ACCESS_TOKEN, {
                 expiresIn: '1m'
             });
@@ -176,8 +176,16 @@ async function run() {
         });
 
         // Is admin
-        app.get('/is-admin', async(req, res)=>{
+        app.get('/is-admin/:email', async(req, res)=>{
+            const email = req.params.email;
+            const user = await usersCollection.findOne({email});
             
+            if(user?.role === 'admin'){
+                res.send({isAdmin : true});
+            }
+            else{
+                res.send({isAdmin : false});
+            }
         });
 
     }
