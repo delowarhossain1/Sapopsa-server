@@ -26,16 +26,17 @@ function verifyToken(req, res, next) {
     }
     // get access token from a sting;
     const token = authorization.split(" ")[1];
-
+   
     jwt.verify(token, process.env.ACCESS_TOKEN, (err, decoded) => {
+
         if (err) {
-            return res.status(403).send({ message: "Forbidden access" });
+            return res.status(403).send({ message: "Forbidden access 0" });
         } else {
             // Check access token email & api requested email;
             if (decoded.email === email) {
                 return next();
             } else {
-                return res.status(403).send({ message: "Forbidden access" });
+                return res.status(403).send({ message: "Forbidden access 1" });
             }
         }
     });
@@ -69,7 +70,7 @@ async function run() {
             if (user?.role === "admin") {
                 return next();
             } else {
-                return res.status(403).send({ message: "Forbidden access" });
+                return res.status(403).send({ message: "Forbidden access 2" });
             }
         };
 
@@ -161,6 +162,16 @@ async function run() {
             }
         });
 
+        // Get products (admin required)
+        app.get('/products', verifyToken, verifyAdmin, async (req, res)=>{
+            const products = await productsCollection.find().project({
+                img : 1,
+                title : 1,
+                price : 1,
+            }).toArray();
+            res.send(products);
+        });
+
 
 
         /******************************
@@ -176,7 +187,7 @@ async function run() {
             const result = await usersCollection.updateOne({ email }, user, option);
 
             const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, {
-                expiresIn: '1m'
+                expiresIn: '1y'
             });
 
             res.send({ result, token });
