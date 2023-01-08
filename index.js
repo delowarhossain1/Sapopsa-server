@@ -55,7 +55,7 @@ async function run() {
         const categoriesCollection = client.db('Sapopsa').collection('categories');
         const productsCollection = client.db('Sapopsa').collection('products');
         const usersCollection = client.db('Sapopsa').collection('users');
-        
+
 
         /******************************
          *  verify Admin 
@@ -128,31 +128,38 @@ async function run() {
             const countProducts = await productsCollection.estimatedDocumentCount();
             const lastSixProducts = countProducts > 6 ? countProducts - 6 : 0;
             const products = await productsCollection.find().project({
-                img : 1,
-                title : 1,
-                price : 1,
-                description : 1
+                img: 1,
+                title: 1,
+                price: 1,
+                description: 1
             })
-            .limit(6)
-            .skip(lastSixProducts)
-            .toArray();
+                .limit(6)
+                .skip(lastSixProducts)
+                .toArray();
 
             res.send(products);
         });
 
         // get product by id
-        app.get('/get-product/:id', async(req, res)=>{
+        app.get('/get-product/:id', async (req, res) => {
             const id = req.params.id;
-            const query = {_id : ObjectId(id)};
+            const query = { _id: ObjectId(id) };
             const product = await productsCollection.findOne(query);
             res.send(product);
         });
 
 
+        // Dashboard report  ( admin verified );
+        app.get('/report', verifyToken, verifyAdmin, async (req, res) => {
+            const totalUsers = await usersCollection.estimatedDocumentCount();
+            const latestFiveCount = totalUsers > 5 ? totalUsers - 5 : 0;
+            const users = await usersCollection.find().limit(5).skip(latestFiveCount).toArray();
 
-
-
-
+            const report = {
+                totalUsers,
+                users,
+            }
+        });
 
 
 
@@ -161,32 +168,33 @@ async function run() {
          * ****************************/
 
         // Add user, update user and send access token. 
-        app.put('/user', async(req, res)=>{
+        app.put('/user', async (req, res) => {
             const userInfo = req.body;
             const email = userInfo.email;
-            const user = {$set : userInfo}
-            const option = { upsert: true }; 
-            const result = await usersCollection.updateOne({email}, user, option);
+            const user = { $set: userInfo }
+            const option = { upsert: true };
+            const result = await usersCollection.updateOne({ email }, user, option);
 
-            const token = jwt.sign({email}, process.env.ACCESS_TOKEN, {
+            const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, {
                 expiresIn: '1m'
             });
 
-            res.send({result, token});
+            res.send({ result, token });
         });
 
         // Is admin
-        app.get('/is-admin/:email', async(req, res)=>{
+        app.get('/is-admin/:email', async (req, res) => {
             const email = req.params.email;
-            const user = await usersCollection.findOne({email});
-            
-            if(user?.role === 'admin'){
-                res.send({isAdmin : true});
+            const user = await usersCollection.findOne({ email });
+
+            if (user?.role === 'admin') {
+                res.send({ isAdmin: true });
             }
-            else{
-                res.send({isAdmin : false});
+            else {
+                res.send({ isAdmin: false });
             }
         });
+
 
     }
     finally {
