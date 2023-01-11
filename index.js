@@ -8,7 +8,9 @@ const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin : 'http://localhost:3000'
+}));
 
 // Default route
 app.get('/', (req, res) => {
@@ -56,6 +58,7 @@ async function run() {
         const categoriesCollection = client.db('Sapopsa').collection('categories');
         const productsCollection = client.db('Sapopsa').collection('products');
         const usersCollection = client.db('Sapopsa').collection('users');
+        const ordersCollection = client.db('Sapopsa').collection('orders');
 
 
         /******************************
@@ -85,8 +88,9 @@ async function run() {
         });
 
         // Update websit heading (admin required)
-        app.patch('/web-heading', async (req, res) => {
-
+        app.put('/web-heading', verifyToken, verifyAdmin, async (req, res) => {
+            const heading = req.body;
+            console.log('ok');
         });
 
         /******************************
@@ -100,9 +104,9 @@ async function run() {
         });
 
         // Add new slider (admin required)
-        app.post('/sliders', async (req, res) => {
+        app.put('/sliders', async (req, res) => {
             const data = req.body;
-
+            console.log(data)
         });
 
         /******************************
@@ -111,13 +115,19 @@ async function run() {
 
         // get all categories
         app.get('/categories', async (req, res) => {
-            const categories = await categoriesCollection.find().toArray();
+            const categories = await categoriesCollection.find().limit(15).toArray();
             res.send(categories);
         });
 
         // insert a new categories (admin required)
         app.post('/categories', async (req, res) => {
 
+        });
+
+        // get all categories (admin required )
+        app.get('/all-categories', verifyToken, verifyAdmin, async(req, res)=>{
+            const categories = await categoriesCollection.find().toArray();
+            res.send(categories);
         });
 
         /******************************
@@ -149,17 +159,32 @@ async function run() {
             res.send(product);
         });
 
+        // delete product ( admin veryfied )
+        app.delete('/product/:id', verifyToken, verifyAdmin, async(req, res)=>{
+            const id = req.params.id;
+            const query = {_id : ObjectId(id)};
+            const result = await productsCollection.deleteOne(query);
+            res.send(result)
+        });
 
         // Dashboard report  ( admin verified );
         app.get('/report', verifyToken, verifyAdmin, async (req, res) => {
             const totalUsers = await usersCollection.estimatedDocumentCount();
+            const totalOrders = await ordersCollection.estimatedDocumentCount();
             const latestFiveCount = totalUsers > 5 ? totalUsers - 5 : 0;
+            const latestFiveCount2 = totalOrders > 5 ? totalOrders - 5 : 0;
+
             const users = await usersCollection.find().limit(5).skip(latestFiveCount).toArray();
+            const orders = await ordersCollection.find().limit(5).skip(latestFiveCount2).toArray();
 
             const report = {
                 totalUsers,
+                totalOrders,
                 users,
+                orders,
             }
+
+            res.send(report);
         });
 
         // Get products (admin required)
@@ -206,6 +231,23 @@ async function run() {
             }
         });
 
+        // customers ( Admin required )
+        app.get('/customers', verifyToken, verifyAdmin, async(req, res)=>{
+            const customer = await usersCollection.find().toArray();
+            res.send(customer);
+        });
+
+        // admins ( admin required )
+        app.get('/admins', verifyToken, verifyAdmin, async(req, res)=>{
+            const admins = await usersCollection.find({role : 'admin'}).toArray();
+            res.send(admins);
+        });
+
+        // make admin ( admin required )
+        app.put('/make-admin', verifyToken, verifyAdmin, async(req, res)=> {
+            const email = req.body;
+            console.log(email);
+        });
 
     }
     finally {

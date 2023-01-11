@@ -10,10 +10,15 @@
         "thisIsFor" : "male",
         "category" : "t-shirt"
     } ,
-
     {
-        "name" : "delowar hossain",
-        "email" : "daloar2400@gmail.com",
-        "role" : "admin"
+        "img" : "https://static-01.daraz.com.bd/p/b3bc623ac69f812e36e22f9d10543e7f.jpg",
+        "title" : "Next T Shirtii 100% Cotton - Genji",
+        "price" : 120,
+        "size" : ["XL", "M","L"],
+        "description" : "In publishing and graphic design, Lorem ipsum is a placeholder text commonly used to demonstrate the visual form of a document or a typeface without relying on meaningful content",
+        "spacification" : ["#TshirtForMan", "#BTSTShirt", "#TshirtForMen"],
+        "displayIMG" : ["https://static-01.daraz.com.bd/p/9843335b4b8e4e6a724ab79723bfd784.jpg", "https://static-01.daraz.com.bd/p/e4309e52778a52fc00a6c9c959cb2f36.jpg"],
+        "thisIsFor" : "male",
+        "category" : "t-shirt"
     }
 ]
