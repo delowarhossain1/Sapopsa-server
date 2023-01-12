@@ -103,6 +103,14 @@ async function run() {
             res.send(sliders);
         });
 
+        // delete slider ( admin verified )
+        app.delete('/slider/:id', verifyToken, verifyAdmin, async(req, res)=>{
+            const id = req.params.id;
+            const query = {_id : ObjectId(id)}
+            const result = await slidersCollection.deleteOne(query);
+            res.send(result);
+        });
+
         // Add new slider (admin required)
         app.put('/sliders', async (req, res) => {
             const data = req.body;
@@ -128,6 +136,14 @@ async function run() {
         app.get('/all-categories', verifyToken, verifyAdmin, async(req, res)=>{
             const categories = await categoriesCollection.find().toArray();
             res.send(categories);
+        });
+
+         // delete category ( admin verified )
+         app.delete('/category/:id', verifyToken, verifyAdmin, async(req, res)=>{
+            const id = req.params.id;
+            const query = {_id : ObjectId(id)}
+            const result = await categoriesCollection.deleteOne(query);
+            res.send(result);
         });
 
         /******************************
