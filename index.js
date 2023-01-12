@@ -249,7 +249,7 @@ async function run() {
 
         // customers ( Admin required )
         app.get('/customers', verifyToken, verifyAdmin, async(req, res)=>{
-            const customer = await usersCollection.find().toArray();
+            const customer = await usersCollection.find({role : {$exists : false}}).toArray();
             res.send(customer);
         });
 
