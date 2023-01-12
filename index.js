@@ -267,6 +267,14 @@ async function run() {
             res.send(result);
         });
 
+        // Delete admin
+        app.patch('/delete-admin', verifyToken, verifyAdmin, async(req, res)=>{
+            const query = req.body;
+            const doc = {role : ''};
+            const result = await usersCollection.updateOne(query, {$unset : doc});
+            res.send(result);
+        });
+
     }
     finally {
 
