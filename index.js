@@ -90,7 +90,7 @@ async function run() {
         // Update websit heading (admin required)
         app.put('/web-heading', verifyToken, verifyAdmin, async (req, res) => {
             const heading = req.body;
-            console.log('ok');
+            console.log(heading);
         });
 
         /******************************
@@ -260,9 +260,11 @@ async function run() {
         });
 
         // make admin ( admin required )
-        app.put('/make-admin', verifyToken, verifyAdmin, async(req, res)=> {
-            const email = req.body;
-            console.log(email);
+        app.patch('/make-admin', verifyToken, verifyAdmin, async(req, res)=> {
+            const query = req.body;
+            const doc = {role : 'admin'}
+            const result = await usersCollection.updateOne(query, {$set : doc});
+            res.send(result);
         });
 
     }
