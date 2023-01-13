@@ -4,12 +4,14 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const env = require('dotenv').config();
 const PORT = process.env.PORT || 5000;
+const verifyToken = require('./middleware/verifyToken');
+const multer = require('./middleware/imageUpload');
 const app = express();
 
 // Middleware
 app.use(express.json());
 app.use(cors({
-    origin : 'http://localhost:3000'
+    origin: 'http://localhost:3000'
 }));
 
 // Default route
@@ -17,32 +19,6 @@ app.get('/', (req, res) => {
     res.send('Hello, everyone. The server is running.')
 });
 
-
-// Verify access token;
-function verifyToken(req, res, next) {
-    const authorization = req.headers.auth;
-    const email = req.query.email;
-
-    if (!authorization) {
-        return res.status(401).send({ message: "Unauthorize access" });
-    }
-    // get access token from a sting;
-    const token = authorization.split(" ")[1];
-   
-    jwt.verify(token, process.env.ACCESS_TOKEN, (err, decoded) => {
-
-        if (err) {
-            return res.status(403).send({ message: "Forbidden access 0" });
-        } else {
-            // Check access token email & api requested email;
-            if (decoded.email === email) {
-                return next();
-            } else {
-                return res.status(403).send({ message: "Forbidden access 1" });
-            }
-        }
-    });
-}
 
 // Datebase action and routing.
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.c7vrvyh.mongodb.net/?retryWrites=true&w=majority`;
@@ -83,14 +59,17 @@ async function run() {
 
         // Get website heading
         app.get('/web-heading', async (req, res) => {
-            const title = await headingCollection.find().toArray();
+            const allHeading = await headingCollection.find().toArray();
+            const title = allHeading[0];
             res.send(title);
         });
 
         // Update websit heading (admin required)
-        app.put('/web-heading', verifyToken, verifyAdmin, async (req, res) => {
+        app.patch('/web-heading', verifyToken, verifyAdmin, async (req, res) => {
             const heading = req.body;
-            console.log(heading);
+            const query = { _id: ObjectId('63b5c60260d78d6022c1b330') };
+            const result = await headingCollection.updateOne(query, { $set: heading });
+            res.send(result);
         });
 
         /******************************
@@ -104,9 +83,9 @@ async function run() {
         });
 
         // delete slider ( admin verified )
-        app.delete('/slider/:id', verifyToken, verifyAdmin, async(req, res)=>{
+        app.delete('/slider/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id;
-            const query = {_id : ObjectId(id)}
+            const query = { _id: ObjectId(id) }
             const result = await slidersCollection.deleteOne(query);
             res.send(result);
         });
@@ -133,15 +112,15 @@ async function run() {
         });
 
         // get all categories (admin required )
-        app.get('/all-categories', verifyToken, verifyAdmin, async(req, res)=>{
+        app.get('/all-categories', verifyToken, verifyAdmin, async (req, res) => {
             const categories = await categoriesCollection.find().toArray();
             res.send(categories);
         });
 
-         // delete category ( admin verified )
-         app.delete('/category/:id', verifyToken, verifyAdmin, async(req, res)=>{
+        // delete category ( admin verified )
+        app.delete('/category/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id;
-            const query = {_id : ObjectId(id)}
+            const query = { _id: ObjectId(id) }
             const result = await categoriesCollection.deleteOne(query);
             res.send(result);
         });
@@ -176,9 +155,9 @@ async function run() {
         });
 
         // delete product ( admin veryfied )
-        app.delete('/product/:id', verifyToken, verifyAdmin, async(req, res)=>{
+        app.delete('/product/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id;
-            const query = {_id : ObjectId(id)};
+            const query = { _id: ObjectId(id) };
             const result = await productsCollection.deleteOne(query);
             res.send(result)
         });
@@ -204,11 +183,11 @@ async function run() {
         });
 
         // Get products (admin required)
-        app.get('/products', verifyToken, verifyAdmin, async (req, res)=>{
+        app.get('/products', verifyToken, verifyAdmin, async (req, res) => {
             const products = await productsCollection.find().project({
-                img : 1,
-                title : 1,
-                price : 1,
+                img: 1,
+                title: 1,
+                price: 1,
             }).toArray();
             res.send(products);
         });
@@ -248,30 +227,30 @@ async function run() {
         });
 
         // customers ( Admin required )
-        app.get('/customers', verifyToken, verifyAdmin, async(req, res)=>{
-            const customer = await usersCollection.find({role : {$exists : false}}).toArray();
+        app.get('/customers', verifyToken, verifyAdmin, async (req, res) => {
+            const customer = await usersCollection.find({ role: { $exists: false } }).toArray();
             res.send(customer);
         });
 
         // admins ( admin required )
-        app.get('/admins', verifyToken, verifyAdmin, async(req, res)=>{
-            const admins = await usersCollection.find({role : 'admin'}).toArray();
+        app.get('/admins', verifyToken, verifyAdmin, async (req, res) => {
+            const admins = await usersCollection.find({ role: 'admin' }).toArray();
             res.send(admins);
         });
 
         // make admin ( admin required )
-        app.patch('/make-admin', verifyToken, verifyAdmin, async(req, res)=> {
+        app.patch('/make-admin', verifyToken, verifyAdmin, async (req, res) => {
             const query = req.body;
-            const doc = {role : 'admin'}
-            const result = await usersCollection.updateOne(query, {$set : doc});
+            const doc = { role: 'admin' }
+            const result = await usersCollection.updateOne(query, { $set: doc });
             res.send(result);
         });
 
         // Delete admin
-        app.patch('/delete-admin', verifyToken, verifyAdmin, async(req, res)=>{
+        app.patch('/delete-admin', verifyToken, verifyAdmin, async (req, res) => {
             const query = req.body;
-            const doc = {role : ''};
-            const result = await usersCollection.updateOne(query, {$unset : doc});
+            const doc = { role: '' };
+            const result = await usersCollection.updateOne(query, { $unset: doc });
             res.send(result);
         });
 
