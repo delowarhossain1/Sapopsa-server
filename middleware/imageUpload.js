@@ -1,11 +1,9 @@
 const multer = require('multer');
 const path = require('path');
 
-const upload_folder = '../uploads/';
-
 const storage = multer.diskStorage({
     destination : (req, file, cb) => {
-        cb(null, upload_folder);
+        cb(null, '../uploads/');
     },
     filename : (req, file, cb) =>{
         const fileExt = path.extname(file.originalname);
@@ -36,4 +34,4 @@ const update = multer({
     }
 });
 
-module.exports = update;
+module.exports = update; 

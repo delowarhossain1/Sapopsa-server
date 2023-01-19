@@ -4,12 +4,52 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const env = require('dotenv').config();
 const PORT = process.env.PORT || 5000;
+const bodyParser = require('body-parser')
 const verifyToken = require('./middleware/verifyToken');
-const multer = require('./middleware/imageUpload');
+const multer = require('multer');
+const path = require('path');
+// const upload = require('./middleware/imageUpload');
 const app = express();
 
 // Middleware
-app.use(express.json());
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, './uploads/');
+    },
+    filename: (req, file, cb) => {
+        const fileExt = path.extname(file.originalname);
+        const fileName = file.originalname
+            .replace(fileExt, '')
+            .toLocaleLowerCase()
+            .split(" ")
+            .join("-") + "-" + Date.now();
+
+        cb(null, fileName + fileExt);
+    }
+});
+
+const upload = multer({
+    storage,
+
+    fileFilter: (req, file, cb) => {
+        if (
+            file.mimetype === 'image/png' ||
+            file.mimetype === 'image/jpg' ||
+            file.mimetype === 'image/jpeg'
+        ) {
+            cb(null, true);
+        }
+        else {
+            cb(null, false);
+        }
+    }
+});
+
+app.use(bodyParser.urlencoded({
+    extended: true
+}));
+
 app.use(cors({
     origin: 'http://localhost:3000'
 }));
@@ -93,7 +133,7 @@ async function run() {
         // Add new slider (admin required)
         app.put('/sliders', async (req, res) => {
             const data = req.body;
-            console.log(data)
+            // console.log(data)
         });
 
         /******************************
@@ -107,8 +147,8 @@ async function run() {
         });
 
         // insert a new categories (admin required)
-        app.post('/categories', async (req, res) => {
-
+        app.post('/categories', verifyToken, verifyAdmin, upload.single('categoryImg'), async (req, res) => {
+            // console.log(req.body);
         });
 
         // get all categories (admin required )
@@ -200,17 +240,22 @@ async function run() {
 
         // Add user, update user and send access token. 
         app.put('/user', async (req, res) => {
-            const userInfo = req.body;
-            const email = userInfo.email;
-            const user = { $set: userInfo }
+            const {email, name} = req.query;
+            const user = { $set: {email, name} }
             const option = { upsert: true };
-            const result = await usersCollection.updateOne({ email }, user, option);
 
-            const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, {
-                expiresIn: '1y'
-            });
+            if (email) {
+                const result = await usersCollection.updateOne({ email }, user, option);
 
-            res.send({ result, token });
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, {
+                    expiresIn: '1y'
+                });
+                res.send({ result, token });
+            }
+            else{
+                res.send({message : 'Email not available'});
+            }
+
         });
 
         // Is admin
@@ -240,17 +285,18 @@ async function run() {
 
         // make admin ( admin required )
         app.patch('/make-admin', verifyToken, verifyAdmin, async (req, res) => {
-            const query = req.body;
+            const getEmail = req.query;
+            const email = getEmail.newAdminEmail;
             const doc = { role: 'admin' }
-            const result = await usersCollection.updateOne(query, { $set: doc });
+            const result = await usersCollection.updateOne({email}, { $set: doc });
             res.send(result);
         });
 
         // Delete admin
         app.patch('/delete-admin', verifyToken, verifyAdmin, async (req, res) => {
-            const query = req.body;
+            const email = req.query.deleteAdmin;
             const doc = { role: '' };
-            const result = await usersCollection.updateOne(query, { $unset: doc });
+            const result = await usersCollection.updateOne({email}, { $unset: doc });
             res.send(result);
         });
 

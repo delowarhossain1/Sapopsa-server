@@ -9,7 +9,7 @@ module.exports = function verifyToken(req, res, next) {
     }
     // get access token from a sting;
     const token = authorization.split(" ")[1];
-   
+
     jwt.verify(token, process.env.ACCESS_TOKEN, (err, decoded) => {
 
         if (err) {
