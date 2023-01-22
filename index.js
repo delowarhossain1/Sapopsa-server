@@ -8,6 +8,7 @@ const bodyParser = require('body-parser')
 const verifyToken = require('./middleware/verifyToken');
 const multer = require('multer');
 const path = require('path');
+const stripe = require('stripe')(process.env.STRIPE_KEY);
 // const upload = require('./middleware/imageUpload');
 const app = express();
 
@@ -50,9 +51,9 @@ app.use(bodyParser.urlencoded({
     extended: true
 }));
 
-app.use(cors({
-    origin: 'http://localhost:3000'
-}));
+app.use(express.json())
+
+app.use(cors());
 
 // Default route
 app.get('/', (req, res) => {
@@ -147,8 +148,9 @@ async function run() {
         });
 
         // insert a new categories (admin required)
-        app.post('/categories', verifyToken, verifyAdmin, upload.single('categoryImg'), async (req, res) => {
-            // console.log(req.body);
+        app.post('/categories', upload.single('categoryImg'), verifyToken, verifyAdmin, async (req, res) => {
+            const data = req.body;
+
         });
 
         // get all categories (admin required )
@@ -240,8 +242,8 @@ async function run() {
 
         // Add user, update user and send access token. 
         app.put('/user', async (req, res) => {
-            const {email, name} = req.query;
-            const user = { $set: {email, name} }
+            const { email, name } = req.query;
+            const user = { $set: { email, name } }
             const option = { upsert: true };
 
             if (email) {
@@ -252,8 +254,8 @@ async function run() {
                 });
                 res.send({ result, token });
             }
-            else{
-                res.send({message : 'Email not available'});
+            else {
+                res.send({ message: 'Email not available' });
             }
 
         });
@@ -288,7 +290,7 @@ async function run() {
             const getEmail = req.query;
             const email = getEmail.newAdminEmail;
             const doc = { role: 'admin' }
-            const result = await usersCollection.updateOne({email}, { $set: doc });
+            const result = await usersCollection.updateOne({ email }, { $set: doc });
             res.send(result);
         });
 
@@ -296,8 +298,35 @@ async function run() {
         app.patch('/delete-admin', verifyToken, verifyAdmin, async (req, res) => {
             const email = req.query.deleteAdmin;
             const doc = { role: '' };
-            const result = await usersCollection.updateOne({email}, { $unset: doc });
+            const result = await usersCollection.updateOne({ email }, { $unset: doc });
             res.send(result);
+        });
+
+
+        /*********************************
+         *    Stripe payments
+         * *******************************/
+
+        app.post('/create-checkout-session', async (req, res) => {
+            const session = await stripe.checkout.sessions.create({
+                line_items: [
+                    {
+                        price_data: {
+                            currency: 'usd',
+                            product_data: {
+                                name: 'T-shirt',
+                            },
+                            unit_amount: 2000,
+                        },
+                        quantity: 1,
+                    }
+                ],
+                mode: 'payment',
+                success_url: `${process.env.CLIENT_URL}/success`,
+                cancel_url: `${process.env.CLIENT_URL}/add-to-card`
+            });
+
+            res.send({url : session.url});
         });
 
     }
