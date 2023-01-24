@@ -308,25 +308,29 @@ async function run() {
          * *******************************/
 
         app.post('/create-checkout-session', async (req, res) => {
-            const session = await stripe.checkout.sessions.create({
-                line_items: [
-                    {
-                        price_data: {
-                            currency: 'usd',
-                            product_data: {
-                                name: 'T-shirt',
-                            },
-                            unit_amount: 2000,
+            const products = req.body;
+            const line_items = products?.map(item => {
+                return {
+                    price_data: {
+                        currency: 'usd',
+                        product_data: {
+                            name: item?.title,
+                            images : [item?.img],                         
                         },
-                        quantity: 1,
-                    }
-                ],
+                        unit_amount: item?.price * 100,
+                    },
+                    quantity: item?.quantity,
+                }
+            })
+
+            const session = await stripe.checkout.sessions.create({
+                line_items,
                 mode: 'payment',
                 success_url: `${process.env.CLIENT_URL}/success`,
                 cancel_url: `${process.env.CLIENT_URL}/add-to-card`
             });
-
-            res.send({url : session.url});
+            
+            res.send({ url: session.url });
         });
 
     }
