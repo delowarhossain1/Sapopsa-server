@@ -6,54 +6,20 @@ const env = require('dotenv').config();
 const PORT = process.env.PORT || 5000;
 const bodyParser = require('body-parser')
 const verifyToken = require('./middleware/verifyToken');
-const multer = require('multer');
+const fileUpload = require('express-fileupload');
 const path = require('path');
 const stripe = require('stripe')(process.env.STRIPE_KEY);
-// const upload = require('./middleware/imageUpload');
 const app = express();
 
-// Middleware
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, './uploads/');
-    },
-    filename: (req, file, cb) => {
-        const fileExt = path.extname(file.originalname);
-        const fileName = file.originalname
-            .replace(fileExt, '')
-            .toLocaleLowerCase()
-            .split(" ")
-            .join("-") + "-" + Date.now();
-
-        cb(null, fileName + fileExt);
-    }
-});
-
-const upload = multer({
-    storage,
-
-    fileFilter: (req, file, cb) => {
-        if (
-            file.mimetype === 'image/png' ||
-            file.mimetype === 'image/jpg' ||
-            file.mimetype === 'image/jpeg'
-        ) {
-            cb(null, true);
-        }
-        else {
-            cb(null, false);
-        }
-    }
-});
-
+// Middlewares
 app.use(bodyParser.urlencoded({
+    limit: "50mb",
     extended: true
 }));
 
 app.use(express.json())
-
 app.use(cors());
+app.use(fileUpload());
 
 // Default route
 app.get('/', (req, res) => {
@@ -100,9 +66,9 @@ async function run() {
 
         // Get website heading
         app.get('/web-heading', async (req, res) => {
-            const allHeading = await headingCollection.find().toArray();
-            const title = allHeading[0];
-            res.send(title);
+            const query = { _id: ObjectId('63b5c60260d78d6022c1b330') };
+            const heading = await headingCollection.findOne(query);
+            res.send(heading);
         });
 
         // Update websit heading (admin required)
@@ -110,6 +76,14 @@ async function run() {
             const heading = req.body;
             const query = { _id: ObjectId('63b5c60260d78d6022c1b330') };
             const result = await headingCollection.updateOne(query, { $set: heading });
+            res.send(result);
+        });
+
+        // Display website hading
+        app.patch('/display-web-heading', verifyToken, verifyAdmin, async (req, res) => {
+            const {isOn} = req.body;
+            const query = { _id: ObjectId('63b5c60260d78d6022c1b330') };
+            const result = await headingCollection.updateOne(query, { $set: {isDispaly : isOn}});
             res.send(result);
         });
 
@@ -148,8 +122,11 @@ async function run() {
         });
 
         // insert a new categories (admin required)
-        app.post('/categories', upload.single('categoryImg'), verifyToken, verifyAdmin, async (req, res) => {
-            const data = req.body;
+        app.post('/categories', verifyToken, verifyAdmin, async (req, res) => {
+            const file = req.files;
+            if (file) {
+
+            }
 
         });
 
@@ -287,10 +264,9 @@ async function run() {
 
         // make admin ( admin required )
         app.patch('/make-admin', verifyToken, verifyAdmin, async (req, res) => {
-            const getEmail = req.query;
-            const email = getEmail.newAdminEmail;
-            const doc = { role: 'admin' }
-            const result = await usersCollection.updateOne({ email }, { $set: doc });
+            const email = req.body;
+            const doc = { role: 'admin' };
+            const result = await usersCollection.updateOne(email, { $set: doc });
             res.send(result);
         });
 
@@ -315,7 +291,7 @@ async function run() {
                         currency: 'usd',
                         product_data: {
                             name: item?.title,
-                            images : [item?.img],                         
+                            images: [item?.img],
                         },
                         unit_amount: item?.price * 100,
                     },
@@ -326,10 +302,10 @@ async function run() {
             const session = await stripe.checkout.sessions.create({
                 line_items,
                 mode: 'payment',
-                success_url: `${process.env.CLIENT_URL}/success`,
+                success_url: `${process.env.CLIENT_URL}/place-order`,
                 cancel_url: `${process.env.CLIENT_URL}/add-to-card`
             });
-            
+
             res.send({ url: session.url });
         });
 
