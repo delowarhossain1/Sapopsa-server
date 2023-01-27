@@ -7,8 +7,9 @@ const PORT = process.env.PORT || 5000;
 const bodyParser = require('body-parser')
 const verifyToken = require('./middleware/verifyToken');
 const fileUpload = require('express-fileupload');
-const path = require('path');
-const stripe = require('stripe')(process.env.STRIPE_KEY);
+const makeFileName = require('./utilities/makeFileName');
+
+const hostURL = `http://localhost:${PORT}`;
 const app = express();
 
 // Middlewares
@@ -20,6 +21,7 @@ app.use(bodyParser.urlencoded({
 app.use(express.json())
 app.use(cors());
 app.use(fileUpload());
+app.use('/images', express.static('uploades'))
 
 // Default route
 app.get('/', (req, res) => {
@@ -56,7 +58,7 @@ async function run() {
             if (user?.role === "admin") {
                 return next();
             } else {
-                return res.status(403).send({ message: "Forbidden access 2" });
+                return res.status(403).send({ message: "Forbidden access 3" });
             }
         };
 
@@ -81,9 +83,9 @@ async function run() {
 
         // Display website hading
         app.patch('/display-web-heading', verifyToken, verifyAdmin, async (req, res) => {
-            const {isOn} = req.body;
+            const { isOn } = req.body;
             const query = { _id: ObjectId('63b5c60260d78d6022c1b330') };
-            const result = await headingCollection.updateOne(query, { $set: {isDispaly : isOn}});
+            const result = await headingCollection.updateOne(query, { $set: { isDispaly: isOn } });
             res.send(result);
         });
 
@@ -106,9 +108,22 @@ async function run() {
         });
 
         // Add new slider (admin required)
-        app.put('/sliders', async (req, res) => {
-            const data = req.body;
-            // console.log(data)
+        app.post('/sliders', verifyToken, verifyAdmin, async (req, res) => {
+            const file = req.files.img;
+            const fileName = makeFileName(file?.name);
+            const uploadDirectory = __dirname + "/uploades/" + fileName;
+            const img = `${hostURL}/images/${fileName}`;
+            const title = req.body.title;
+
+            file.mv(uploadDirectory, async (err) => {
+                if (err) {
+                    res.send({message : "image upload : " + err});
+                }
+                else {
+                    const result = await slidersCollection.insertOne({img, title});
+                    res.send(result);
+                }
+            })
         });
 
         /******************************
