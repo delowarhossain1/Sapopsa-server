@@ -138,11 +138,24 @@ async function run() {
 
         // insert a new categories (admin required)
         app.post('/categories', verifyToken, verifyAdmin, async (req, res) => {
-            const file = req.files;
-            if (file) {
+            const file = req.files?.img;
+            const title = req.body?.title;
+            const thisIsFor = req.body?.thisIsFor;
+            const route = req.body?.route;
+            const fileName = makeFileName(file?.name);
+            const img = `${hostURL}/images/${fileName}`;
+            const doc = {img, title, thisIsFor, route};
+            const dir = __dirname + '/uploades/' + fileName;
 
-            }
-
+            file.mv(dir, async (err) => {
+                if(err){
+                    res.send({message : 'Unable file upload'});
+                }
+                else{
+                    const result = await categoriesCollection.insertOne(doc);
+                    res.send(result);
+                }
+            });
         });
 
         // get all categories (admin required )
