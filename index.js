@@ -8,6 +8,7 @@ const bodyParser = require('body-parser')
 const verifyToken = require('./middleware/verifyToken');
 const fileUpload = require('express-fileupload');
 const makeFileName = require('./utilities/makeFileName');
+const imageUpload = require('./utilities/imageUpload');
 
 const hostURL = `http://localhost:${PORT}`;
 const app = express();
@@ -115,15 +116,11 @@ async function run() {
             const img = `${hostURL}/images/${fileName}`;
             const title = req.body.title;
 
-            file.mv(uploadDirectory, async (err) => {
-                if (err) {
-                    res.send({message : "image upload : " + err});
-                }
-                else {
-                    const result = await slidersCollection.insertOne({img, title});
-                    res.send(result);
-                }
-            })
+            // Upload image and database update
+            imageUpload(file, uploadDirectory, async () => {
+                const result = await slidersCollection.insertOne({ img, title });
+                res.send(result);
+            });
         });
 
         /******************************
@@ -144,17 +141,13 @@ async function run() {
             const route = req.body?.route;
             const fileName = makeFileName(file?.name);
             const img = `${hostURL}/images/${fileName}`;
-            const doc = {img, title, thisIsFor, route};
+            const doc = { img, title, thisIsFor, route };
             const dir = __dirname + '/uploades/' + fileName;
 
-            file.mv(dir, async (err) => {
-                if(err){
-                    res.send({message : 'Unable file upload'});
-                }
-                else{
-                    const result = await categoriesCollection.insertOne(doc);
-                    res.send(result);
-                }
+            // upload image and update database
+            imageUpload(file, dir, async () => {
+                const result = await categoriesCollection.insertOne(doc);
+                res.send(result);
             });
         });
 
@@ -239,6 +232,50 @@ async function run() {
             res.send(products);
         });
 
+        // Add new product (admin required)
+        app.post('/product', verifyToken, verifyAdmin, async(req, res) => {
+            try {
+                const { title, price, thisIsFor, category, des, colors, spec, size, specification } = req.body;
+
+                const gIMG = req.files['galleryIMG'];
+                const dir = __dirname + '/up/';                
+                const imgURL = [];
+                
+
+                gIMG?.forEach(img => {
+                    const imgName = makeFileName(img?.name);
+                    const directory = dir + imgName;
+
+                    imageUpload(img, directory, ()=>{
+                        const url = `${hostURL}/images/${imgName}`;
+                        imgURL.push(url);
+                    });
+                });
+
+                setTimeout(async ()=> {
+                    const doc = {
+                        title,
+                        thisIsFor,
+                        category,
+                        img : imgURL[0],
+                        displayIMG : imgURL,
+                        description : des,
+                        price : Number(price),
+                        size : size || [],
+                        colors : colors || [],
+                        specification : specification || [],
+                    }
+
+                    console.log(doc);
+                //    const result = await productsCollection.insertOne(doc);
+                //    res.send(result);
+
+                }, 1000);
+            }
+            catch (err){
+                res.send({message : 'Product not added.', err})
+            }
+        });
 
 
         /******************************
@@ -304,37 +341,6 @@ async function run() {
             const doc = { role: '' };
             const result = await usersCollection.updateOne({ email }, { $unset: doc });
             res.send(result);
-        });
-
-
-        /*********************************
-         *    Stripe payments
-         * *******************************/
-
-        app.post('/create-checkout-session', async (req, res) => {
-            const products = req.body;
-            const line_items = products?.map(item => {
-                return {
-                    price_data: {
-                        currency: 'usd',
-                        product_data: {
-                            name: item?.title,
-                            images: [item?.img],
-                        },
-                        unit_amount: item?.price * 100,
-                    },
-                    quantity: item?.quantity,
-                }
-            })
-
-            const session = await stripe.checkout.sessions.create({
-                line_items,
-                mode: 'payment',
-                success_url: `${process.env.CLIENT_URL}/place-order`,
-                cancel_url: `${process.env.CLIENT_URL}/add-to-card`
-            });
-
-            res.send({ url: session.url });
         });
 
     }
