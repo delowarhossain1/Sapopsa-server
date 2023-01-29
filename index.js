@@ -165,6 +165,27 @@ async function run() {
             res.send(result);
         });
 
+        // Get category for menu
+        app.get('/categories-list', async (req, res) => {
+
+            const men = await categoriesCollection
+                .find({ thisIsFor: 'men' })
+                .project({ title: 1, route: 1 })
+                .toArray();
+
+            const women = await categoriesCollection
+                .find({ thisIsFor: 'women' })
+                .project({ title: 1, route: 1 })
+                .toArray();
+
+            const sports = await categoriesCollection
+                .find({ thisIsFor: 'sports' })
+                .project({ title: 1, route: 1 })
+                .toArray();
+
+            res.send({men, women, sports});
+        })
+
         /******************************
         *  Products 
         * ****************************/
@@ -233,47 +254,46 @@ async function run() {
         });
 
         // Add new product (admin required)
-        app.post('/product', verifyToken, verifyAdmin, async(req, res) => {
+        app.post('/product', verifyToken, verifyAdmin, async (req, res) => {
             try {
                 const { title, price, thisIsFor, category, des, colors, spec, size, specification } = req.body;
 
                 const gIMG = req.files['galleryIMG'];
-                const dir = __dirname + '/up/';                
+                const dir = __dirname + '/uploades/';
                 const imgURL = [];
-                
+
 
                 gIMG?.forEach(img => {
                     const imgName = makeFileName(img?.name);
                     const directory = dir + imgName;
 
-                    imageUpload(img, directory, ()=>{
+                    imageUpload(img, directory, () => {
                         const url = `${hostURL}/images/${imgName}`;
                         imgURL.push(url);
                     });
                 });
 
-                setTimeout(async ()=> {
+                setTimeout(async () => {
                     const doc = {
                         title,
                         thisIsFor,
                         category,
-                        img : imgURL[0],
-                        displayIMG : imgURL,
-                        description : des,
-                        price : Number(price),
-                        size : size || [],
-                        colors : colors || [],
-                        specification : specification || [],
+                        img: imgURL[0],
+                        displayIMG: imgURL,
+                        description: des,
+                        price: Number(price),
+                        size: size || [],
+                        colors: colors || [],
+                        specification: specification || [],
                     }
 
-                    console.log(doc);
-                //    const result = await productsCollection.insertOne(doc);
-                //    res.send(result);
+                       const result = await productsCollection.insertOne(doc);
+                       res.send(result);
 
                 }, 1000);
             }
-            catch (err){
-                res.send({message : 'Product not added.', err})
+            catch (err) {
+                res.send({ message: 'Product not added.', err })
             }
         });
 
