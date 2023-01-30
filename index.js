@@ -207,6 +207,26 @@ async function run() {
             res.send(products);
         });
 
+        // Product for ( men, women, sports );
+        app.get('/product-for', async(req, res)=>{
+            try{
+                const {thisIsFor} = req.query;
+                const products = await productsCollection
+                                        .find({thisIsFor})
+                                        .project({
+                                            img : 1,
+                                            title : 1,
+                                            price : 1,
+                                            })
+                                        .toArray();
+
+                res.send(products);
+            }
+            catch(err){
+                res.send([]);
+            }   
+        });
+
         // get product by id
         app.get('/get-product/:id', async (req, res) => {
             const id = req.params.id;
@@ -249,6 +269,8 @@ async function run() {
                 img: 1,
                 title: 1,
                 price: 1,
+                category : 1,
+                thisIsFor : 1
             }).toArray();
             res.send(products);
         });
@@ -256,7 +278,7 @@ async function run() {
         // Add new product (admin required)
         app.post('/product', verifyToken, verifyAdmin, async (req, res) => {
             try {
-                const { title, price, thisIsFor, category, des, colors, spec, size, specification } = req.body;
+                const { title, price, thisIsFor, category, des, colors, size, specification } = req.body;
 
                 const gIMG = req.files['galleryIMG'];
                 const dir = __dirname + '/uploades/';
@@ -279,7 +301,7 @@ async function run() {
                         thisIsFor,
                         category,
                         img: imgURL[0],
-                        displayIMG: imgURL,
+                        galleryIMG: imgURL,
                         description: des,
                         price: Number(price),
                         size: size || [],
