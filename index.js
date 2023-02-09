@@ -183,7 +183,7 @@ async function run() {
                 .project({ title: 1, route: 1 })
                 .toArray();
 
-            res.send({men, women, sports});
+            res.send({ men, women, sports });
         })
 
         /******************************
@@ -208,23 +208,44 @@ async function run() {
         });
 
         // Product for ( men, women, sports );
-        app.get('/product-for', async(req, res)=>{
-            try{
-                const {thisIsFor} = req.query;
+        app.get('/product-for', async (req, res) => {
+            try {
+                const { thisIsFor } = req.query;
                 const products = await productsCollection
-                                        .find({thisIsFor})
-                                        .project({
-                                            img : 1,
-                                            title : 1,
-                                            price : 1,
-                                            })
-                                        .toArray();
+                    .find({ thisIsFor })
+                    .project({
+                        img: 1,
+                        title: 1,
+                        price: 1,
+                    })
+                    .toArray();
 
                 res.send(products);
             }
-            catch(err){
+            catch (err) {
                 res.send([]);
-            }   
+            }
+        });
+
+        // Get product by category 
+        app.get('/categories-products', async (req, res) => {
+            try {
+                const { cty } = req.query;
+
+                const products = await productsCollection
+                    .find({ category : cty })
+                    .project({
+                        img: 1,
+                        title: 1,
+                        price: 1,
+                    })
+                    .toArray();
+
+                res.send(products);
+            }
+            catch (err) {
+                res.send([]);
+            }
         });
 
         // get product by id
@@ -269,8 +290,8 @@ async function run() {
                 img: 1,
                 title: 1,
                 price: 1,
-                category : 1,
-                thisIsFor : 1
+                category: 1,
+                thisIsFor: 1
             }).toArray();
             res.send(products);
         });
@@ -309,8 +330,8 @@ async function run() {
                         specification: specification || [],
                     }
 
-                       const result = await productsCollection.insertOne(doc);
-                       res.send(result);
+                    const result = await productsCollection.insertOne(doc);
+                    res.send(result);
 
                 }, 1000);
             }
@@ -319,6 +340,21 @@ async function run() {
             }
         });
 
+
+        /******************************
+         *  Orders management
+         * ****************************/
+        
+        app.post('/order', verifyToken, async(req, res)=>{
+            try{
+                const data = req.body;
+                const result = await ordersCollection.insertOne(data);
+                res.send(result);
+            }
+            catch(err){
+                res.send({err});
+            }
+        });
 
         /******************************
          *  User management
