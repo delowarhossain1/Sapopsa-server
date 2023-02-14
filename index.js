@@ -15,7 +15,6 @@ const app = express();
 
 // Middlewares
 app.use(bodyParser.urlencoded({
-    limit: "50mb",
     extended: true
 }));
 
@@ -59,6 +58,7 @@ async function run() {
             if (user?.role === "admin") {
                 return next();
             } else {
+                console.log('Admin required...')
                 return res.status(403).send({ message: "Forbidden access 3" });
             }
         };
@@ -233,7 +233,7 @@ async function run() {
                 const { cty } = req.query;
 
                 const products = await productsCollection
-                    .find({ category : cty })
+                    .find({ category: cty })
                     .project({
                         img: 1,
                         title: 1,
@@ -266,19 +266,44 @@ async function run() {
 
         // Dashboard report  ( admin verified );
         app.get('/report', verifyToken, verifyAdmin, async (req, res) => {
+            const date = new Date().toDateString();
             const totalUsers = await usersCollection.estimatedDocumentCount();
             const totalOrders = await ordersCollection.estimatedDocumentCount();
-            const latestFiveCount = totalUsers > 5 ? totalUsers - 5 : 0;
-            const latestFiveCount2 = totalOrders > 5 ? totalOrders - 5 : 0;
+            const totalProducts = await productsCollection.estimatedDocumentCount();
+            const totalCategories = await categoriesCollection.estimatedDocumentCount();
 
-            const users = await usersCollection.find().limit(5).skip(latestFiveCount).toArray();
-            const orders = await ordersCollection.find().limit(5).skip(latestFiveCount2).toArray();
+            const latestFiveCount = totalUsers > 7 ? totalUsers - 7 : 0;
+            const latestFiveCount2 = totalOrders > 3 ? totalOrders - 3 : 0;
+
+            const users = await usersCollection
+                .find()
+                .limit(7)
+                .skip(latestFiveCount)
+                .toArray();
+
+            const orders = await ordersCollection
+                .find()
+                .project({ isMultipleOrder : 1, total : 1, placed: 1})
+                .limit(3)
+                .skip(latestFiveCount2)
+                .toArray();
+
+            const todaysOrders = await ordersCollection
+                .countDocuments({ "placed.date": date });
+
+            const successFulDelivered = await ordersCollection
+                .countDocuments({status : "Delivered"});                       
+            
 
             const report = {
                 totalUsers,
                 totalOrders,
+                todaysOrders,
                 users,
                 orders,
+                successFulDelivered,
+                totalProducts,
+                totalCategories
             }
 
             res.send(report);
@@ -344,15 +369,104 @@ async function run() {
         /******************************
          *  Orders management
          * ****************************/
-        
-        app.post('/order', verifyToken, async(req, res)=>{
-            try{
+
+        // Add a new order
+        app.post('/order', verifyToken, async (req, res) => {
+            try {
                 const data = req.body;
                 const result = await ordersCollection.insertOne(data);
                 res.send(result);
             }
-            catch(err){
-                res.send({err});
+            catch (err) {
+                res.send({ err });
+            }
+        });
+
+        // Get may orders
+        app.get('/my-orders', verifyToken, async (req, res) => {
+            try {
+                const email = req.query.email;
+                const query = { "dailyveryInfo.email": email }
+
+                const orders = await ordersCollection
+                    .find(query)
+                    .project({
+                        placed: 1,
+                        status: 1,
+                        products: {
+                            img: 1,
+                            title: 1,
+                            quantity: 1
+                        },
+                        payment: { txn: 1 },
+                    })
+                    .toArray();
+
+                const latestOrders = orders.reverse();
+                res.send(latestOrders);
+            }
+            catch (err) {
+                res.send({ err });
+            }
+        });
+
+        // get order by id;
+        app.get('/get-order', verifyToken, async (req, res) => {
+            try {
+                const { id } = req.query;
+                const result = await ordersCollection.findOne({ _id: ObjectId(id) });
+                res.send(result);
+            }
+            catch (err) {
+                res.send({ err });
+            }
+        });
+
+        // get orders (admin verifyed)
+        app.get('/orders', verifyToken, verifyAdmin, async (req, res) => {
+            try {
+                const { searchText } = req.query;
+
+                const orders = await ordersCollection
+                    .find({
+                        $or: [
+                            { status: searchText },
+                            { "dailyveryInfo.email": searchText },
+                            { "dailyveryInfo.phone": searchText },
+                            { "payment.txn": searchText }
+                        ]
+                    })
+                    .project({
+                        isMultipleOrder: 1,
+                        status: 1,
+                        total: 1,
+                        placed: 1,
+                        dailyveryInfo: { phone: 1, email: 1 },
+                        payment: { txn: 1 }
+                    })
+                    .toArray();
+
+                const latestOrders = orders.reverse();
+                res.send(latestOrders);
+            }
+            catch (err) {
+                res.send({ err })
+            }
+        });
+
+        // update order status (admin verifyed)
+        app.patch('/update-order-status/:id', verifyToken, verifyAdmin, async (req, res) => {
+            try {
+                const { status } = req.query;
+                const id = req.params.id;
+                const doc = { status };
+                const query = { _id: ObjectId(id) };
+
+                const result = await ordersCollection.updateOne(query, { $set: doc });
+                res.send(result);
+            }
+            catch (err) {
+                res.send({ err })
             }
         });
 
