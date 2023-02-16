@@ -38,12 +38,14 @@ async function run() {
         await client.connect();
 
         // Database collection
-        const headingCollection = client.db('Sapopsa').collection('websiteHeading');
-        const slidersCollection = client.db('Sapopsa').collection('sliders');
-        const categoriesCollection = client.db('Sapopsa').collection('categories');
-        const productsCollection = client.db('Sapopsa').collection('products');
-        const usersCollection = client.db('Sapopsa').collection('users');
-        const ordersCollection = client.db('Sapopsa').collection('orders');
+        const dataBase = client.db('Sapopsa');
+        const headingCollection = dataBase.collection('websiteHeading');
+        const slidersCollection = dataBase.collection('sliders');
+        const categoriesCollection = dataBase.collection('categories');
+        const productsCollection = dataBase.collection('products');
+        const usersCollection = dataBase.collection('users');
+        const ordersCollection = dataBase.collection('orders');
+        const settingCollection = dataBase.collection('setting');
 
 
         /******************************
@@ -85,19 +87,6 @@ async function run() {
                 const heading = req.body;
                 const query = { _id: ObjectId('63b5c60260d78d6022c1b330') };
                 const result = await headingCollection.updateOne(query, { $set: heading });
-                res.send(result);
-            }
-            catch (err) {
-                res.send({ err });
-            }
-        });
-
-        // Display website hading
-        app.patch('/display-web-heading', verifyToken, verifyAdmin, async (req, res) => {
-            try {
-                const { isOn } = req.body;
-                const query = { _id: ObjectId('63b5c60260d78d6022c1b330') };
-                const result = await headingCollection.updateOne(query, { $set: { isDispaly: isOn } });
                 res.send(result);
             }
             catch (err) {
@@ -640,6 +629,41 @@ async function run() {
             }
             catch (err) {
                 res.send({ err });
+            }
+        });
+
+
+        /*
+            ************** Settings management ********
+        */
+
+        // Get app settings
+        app.get('/settings', verifyToken, async (req, res) => {
+            try {
+                const query = {_id : ObjectId('63edeebb11d0f727c6f20515')};
+                const settings = await settingCollection.findOne(query);
+                res.send(settings);
+            }
+            catch (err) {
+                res.send({ err });
+            }
+        });
+
+        // inset or update settings
+        app.patch('/settings', verifyToken, verifyToken, async(req, res)=>{
+            try{
+                const settingInfo = req.body;
+                const query = {_id : ObjectId('63edeebb11d0f727c6f20515')};
+                const result = await settingCollection.updateOne(query, {$set : settingInfo});
+
+                // update heading status;
+                const headingQuery = { _id: ObjectId('63b5c60260d78d6022c1b330') };
+                const updateHeading = await headingCollection.updateOne(headingQuery, { $set: { isDispaly: settingInfo?.isNavbarTitleDisplay }});
+
+                res.send(result);
+            }
+            catch(err){
+                res.send({err});
             }
         });
 
