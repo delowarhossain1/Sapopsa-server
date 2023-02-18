@@ -353,13 +353,16 @@ async function run() {
                 const successFulDelivered = await ordersCollection
                     .countDocuments({ status: "Delivered" });
 
+                // latest 
+                const latestOrders = orders.reverse();
+                const latestUsers = users.reverse();
 
                 const report = {
                     totalUsers,
                     totalOrders,
                     todaysOrders,
-                    users,
-                    orders,
+                    users : latestUsers,
+                    orders : latestOrders,
                     successFulDelivered,
                     totalProducts,
                     totalCategories
