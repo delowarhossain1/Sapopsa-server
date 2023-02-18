@@ -94,6 +94,31 @@ async function run() {
             }
         });
 
+        // Search bar
+        app.get('/search', async(req, res)=>{
+            try{
+                const text = req.headers.search;
+                const products = await productsCollection.find({
+                    $or : [
+                        {title : {$regex : ".*"+ text + ".*", $options : "i"}},
+                        {thisIsFor : {$regex : ".*"+ text + ".*", $options : "i"}},
+                        {description : {$regex : ".*"+ text + ".*", $options : "i"}},
+                        {category : {$regex : ".*"+ text + ".*", $options : "i"}}
+                    ]
+                })
+                .project({
+                    img: 1,
+                    title: 1,
+                    price: 1,
+                })
+                .toArray();
+                res.send(products);
+            }
+            catch(err){
+                res.send({err});
+            }
+        });
+
         /******************************
         *  Sliders
         * ****************************/
