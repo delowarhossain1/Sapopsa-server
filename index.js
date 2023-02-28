@@ -10,7 +10,7 @@ const fileUpload = require('express-fileupload');
 const makeFileName = require('./utilities/makeFileName');
 const imageUpload = require('./utilities/imageUpload');
 
-const hostURL = `http://localhost:${PORT}`;
+const hostURL = `http://localhost:${PORT}`; //this is updated text.
 const app = express();
 
 // Middlewares
