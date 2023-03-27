@@ -10,7 +10,7 @@ const fileUpload = require('express-fileupload');
 const makeFileName = require('./utilities/makeFileName');
 const imageUpload = require('./utilities/imageUpload');
 
-const hostURL = `http://localhost:${PORT}`; //this is updated text.
+const hostURL = `http://localhost:${PORT}`;
 const app = express();
 
 // Middlewares
@@ -421,7 +421,8 @@ async function run() {
         app.post('/product', verifyToken, verifyAdmin, async (req, res) => {
             try {
                 const { title, price, thisIsFor, category, des, colors, size, specification } = req.body;
-
+                console.log(specification)
+                
                 const gIMG = req.files['galleryIMG'];
                 const dir = __dirname + '/uploades/';
                 const imgURL = [];
