@@ -23,12 +23,6 @@ app.use(cors());
 app.use(fileUpload());
 app.use('/images', express.static('uploades'))
 
-// Default route
-app.get('/', (req, res) => {
-    res.send('Hello, everyone. The server is running.')
-});
-
-
 // Datebase action and routing.
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.c7vrvyh.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
@@ -70,7 +64,7 @@ async function run() {
          * ****************************/
 
         // Get website heading
-        app.get('/web-heading', async (req, res) => {
+        app.get('/api/web-heading', async (req, res) => {
             try {
                 const query = { _id: ObjectId('63b5c60260d78d6022c1b330') };
                 const heading = await headingCollection.findOne(query);
@@ -82,7 +76,7 @@ async function run() {
         });
 
         // Update websit heading (admin required)
-        app.patch('/web-heading', verifyToken, verifyAdmin, async (req, res) => {
+        app.patch('/api/web-heading', verifyToken, verifyAdmin, async (req, res) => {
             try {
                 const heading = req.body;
                 const query = { _id: ObjectId('63b5c60260d78d6022c1b330') };
@@ -95,7 +89,7 @@ async function run() {
         });
 
         // Search bar
-        app.get('/search', async(req, res)=>{
+        app.get('/api/search', async(req, res)=>{
             try{
                 const text = req.headers.search;
                 const products = await productsCollection.find({
@@ -124,7 +118,7 @@ async function run() {
         * ****************************/
 
         //  Get all sliders
-        app.get('/sliders', async (req, res) => {
+        app.get('/api/sliders', async (req, res) => {
             try {
                 const sliders = await slidersCollection.find().toArray();
                 res.send(sliders);
@@ -135,7 +129,7 @@ async function run() {
         });
 
         // delete slider ( admin verified )
-        app.delete('/slider/:id', verifyToken, verifyAdmin, async (req, res) => {
+        app.delete('/api/slider/:id', verifyToken, verifyAdmin, async (req, res) => {
             try {
                 const id = req.params.id;
                 const query = { _id: ObjectId(id) }
@@ -148,7 +142,7 @@ async function run() {
         });
 
         // Add new slider (admin required)
-        app.post('/sliders', verifyToken, verifyAdmin, async (req, res) => {
+        app.post('/api/sliders', verifyToken, verifyAdmin, async (req, res) => {
             try {
                 const file = req.files.img;
                 const fileName = makeFileName(file?.name);
@@ -172,7 +166,7 @@ async function run() {
          * ****************************/
 
         // get all categories
-        app.get('/categories', async (req, res) => {
+        app.get('/api/categories', async (req, res) => {
             try {
                 const categories = await categoriesCollection.find().limit(15).toArray();
                 res.send(categories);
@@ -183,7 +177,7 @@ async function run() {
         });
 
         // insert a new categories (admin required)
-        app.post('/categories', verifyToken, verifyAdmin, async (req, res) => {
+        app.post('/api/categories', verifyToken, verifyAdmin, async (req, res) => {
             try {
                 const file = req.files?.img;
                 const title = req.body?.title;
@@ -206,7 +200,7 @@ async function run() {
         });
 
         // get all categories (admin required )
-        app.get('/all-categories', verifyToken, verifyAdmin, async (req, res) => {
+        app.get('/api/all-categories', verifyToken, verifyAdmin, async (req, res) => {
             try {
                 const categories = await categoriesCollection.find().toArray();
                 res.send(categories);
@@ -217,7 +211,7 @@ async function run() {
         });
 
         // delete category ( admin verified )
-        app.delete('/category/:id', verifyToken, verifyAdmin, async (req, res) => {
+        app.delete('/api/category/:id', verifyToken, verifyAdmin, async (req, res) => {
             try {
                 const id = req.params.id;
                 const query = { _id: ObjectId(id) }
@@ -230,7 +224,7 @@ async function run() {
         });
 
         // Get category for menu
-        app.get('/categories-list', async (req, res) => {
+        app.get('/api/categories-list', async (req, res) => {
             try {
                 const men = await categoriesCollection
                     .find({ thisIsFor: 'men' })
@@ -259,7 +253,7 @@ async function run() {
         * ****************************/
 
         //  get latest 6 products
-        app.get('/latest-products', async (req, res) => {
+        app.get('/api/latest-products', async (req, res) => {
             try {
                 const countProducts = await productsCollection.estimatedDocumentCount();
                 const lastSixProducts = countProducts > 6 ? countProducts - 6 : 0;
@@ -281,7 +275,7 @@ async function run() {
         });
 
         // Product for ( men, women, sports );
-        app.get('/product-for', async (req, res) => {
+        app.get('/api/product-for', async (req, res) => {
             try {
                 const { thisIsFor } = req.query;
                 const products = await productsCollection
@@ -301,7 +295,7 @@ async function run() {
         });
 
         // Get product by category 
-        app.get('/categories-products', async (req, res) => {
+        app.get('/api/categories-products', async (req, res) => {
             try {
                 const { cty } = req.query;
 
@@ -322,7 +316,7 @@ async function run() {
         });
 
         // get product by id
-        app.get('/get-product/:id', async (req, res) => {
+        app.get('/api/get-product/:id', async (req, res) => {
             try {
                 const id = req.params.id;
                 const query = { _id: ObjectId(id) };
@@ -335,7 +329,7 @@ async function run() {
         });
 
         // delete product ( admin veryfied )
-        app.delete('/product/:id', verifyToken, verifyAdmin, async (req, res) => {
+        app.delete('/api/product/:id', verifyToken, verifyAdmin, async (req, res) => {
             try {
                 const id = req.params.id;
                 const query = { _id: ObjectId(id) };
@@ -348,7 +342,7 @@ async function run() {
         });
 
         // Dashboard report  ( admin verified );
-        app.get('/report', verifyToken, verifyAdmin, async (req, res) => {
+        app.get('/api/report', verifyToken, verifyAdmin, async (req, res) => {
             try {
                 const date = new Date().toDateString();
                 const totalUsers = await usersCollection.estimatedDocumentCount();
@@ -401,7 +395,7 @@ async function run() {
         });
 
         // Get products (admin required)
-        app.get('/products', verifyToken, verifyAdmin, async (req, res) => {
+        app.get('/api/products', verifyToken, verifyAdmin, async (req, res) => {
             try {
                 const products = await productsCollection.find().project({
                     img: 1,
@@ -418,10 +412,10 @@ async function run() {
         });
 
         // Add new product (admin required)
-        app.post('/product', verifyToken, verifyAdmin, async (req, res) => {
+        app.post('/api/product', verifyToken, verifyAdmin, async (req, res) => {
             try {
                 const { title, price, thisIsFor, category, des, colors, size, specification } = req.body;
-                console.log(specification)
+               
                 
                 const gIMG = req.files['galleryIMG'];
                 const dir = __dirname + '/uploades/';
@@ -468,7 +462,7 @@ async function run() {
          * ****************************/
 
         // Add a new order
-        app.post('/order', verifyToken, async (req, res) => {
+        app.post('/api/order', verifyToken, async (req, res) => {
             try {
                 const data = req.body;
                 const result = await ordersCollection.insertOne(data);
@@ -480,7 +474,7 @@ async function run() {
         });
 
         // Get may orders
-        app.get('/my-orders', verifyToken, async (req, res) => {
+        app.get('/api/my-orders', verifyToken, async (req, res) => {
             try {
                 const email = req.query.email;
                 const query = { "dailyveryInfo.email": email }
@@ -508,7 +502,7 @@ async function run() {
         });
 
         // get order by id;
-        app.get('/get-order', verifyToken, async (req, res) => {
+        app.get('/api/get-order', verifyToken, async (req, res) => {
             try {
                 const { id } = req.query;
                 const result = await ordersCollection.findOne({ _id: ObjectId(id) });
@@ -520,7 +514,7 @@ async function run() {
         });
 
         // get orders (admin verifyed)
-        app.get('/orders', verifyToken, verifyAdmin, async (req, res) => {
+        app.get('/api/orders', verifyToken, verifyAdmin, async (req, res) => {
             try {
                 const { searchText } = req.query;
 
@@ -552,7 +546,7 @@ async function run() {
         });
 
         // update order status (admin verifyed)
-        app.patch('/update-order-status/:id', verifyToken, verifyAdmin, async (req, res) => {
+        app.patch('/api/update-order-status/:id', verifyToken, verifyAdmin, async (req, res) => {
             try {
                 const { status } = req.query;
                 const id = req.params.id;
@@ -572,7 +566,7 @@ async function run() {
          * ****************************/
 
         // Add user, update user and send access token. 
-        app.put('/user', async (req, res) => {
+        app.put('/api/user', async (req, res) => {
             try {
                 const { email, name } = req.query;
                 const user = { $set: { email, name } }
@@ -596,7 +590,7 @@ async function run() {
         });
 
         // Is admin
-        app.get('/is-admin/:email', async (req, res) => {
+        app.get('/api/is-admin/:email', async (req, res) => {
             try {
                 const email = req.params.email;
                 const user = await usersCollection.findOne({ email });
@@ -614,7 +608,7 @@ async function run() {
         });
 
         // customers ( Admin required )
-        app.get('/customers', verifyToken, verifyAdmin, async (req, res) => {
+        app.get('/api/customers', verifyToken, verifyAdmin, async (req, res) => {
             try {
                 const customer = await usersCollection.find({ role: { $exists: false } }).toArray();
                 res.send(customer);
@@ -625,7 +619,7 @@ async function run() {
         });
 
         // admins ( admin required )
-        app.get('/admins', verifyToken, verifyAdmin, async (req, res) => {
+        app.get('/api/admins', verifyToken, verifyAdmin, async (req, res) => {
             try {
                 const admins = await usersCollection.find({ role: 'admin' }).toArray();
                 res.send(admins);
@@ -636,7 +630,7 @@ async function run() {
         });
 
         // make admin ( admin required )
-        app.patch('/make-admin', verifyToken, verifyAdmin, async (req, res) => {
+        app.patch('/api/make-admin', verifyToken, verifyAdmin, async (req, res) => {
             try {
                 const email = req.body;
                 const doc = { role: 'admin' };
@@ -649,7 +643,7 @@ async function run() {
         });
 
         // Delete admin
-        app.patch('/delete-admin', verifyToken, verifyAdmin, async (req, res) => {
+        app.patch('/api/delete-admin', verifyToken, verifyAdmin, async (req, res) => {
             try {
                 const email = req.query.deleteAdmin;
                 const doc = { role: '' };
@@ -667,7 +661,7 @@ async function run() {
         */
 
         // Get app settings
-        app.get('/settings', verifyToken, async (req, res) => {
+        app.get('/api/settings', verifyToken, async (req, res) => {
             try {
                 const query = {_id : ObjectId('63edeebb11d0f727c6f20515')};
                 const settings = await settingCollection.findOne(query);
@@ -679,7 +673,7 @@ async function run() {
         });
 
         // inset or update settings
-        app.patch('/settings', verifyToken, verifyToken, async(req, res)=>{
+        app.patch('/api/settings', verifyToken, verifyToken, async(req, res)=>{
             try{
                 const settingInfo = req.body;
                 const query = {_id : ObjectId('63edeebb11d0f727c6f20515')};
