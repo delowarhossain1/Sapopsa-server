@@ -14,14 +14,15 @@ const hostURL = `http://localhost:${PORT}`;
 const app = express();
 
 // Middlewares
-app.use(bodyParser.urlencoded({
-    extended: true
-}));
+app.use(express.json({limit: '50mb'}));
+app.use(express.urlencoded({limit: '50mb'}));
+app.use(bodyParser.json({limit: '50mb'}));
+app.use(bodyParser.urlencoded({limit: '50mb', extended: true, parameterLimit:50000}));
 
-app.use(express.json())
+app.use(express.json());
 app.use(cors());
 app.use(fileUpload());
-app.use('/images', express.static('uploades'))
+app.use('/api/images', express.static('uploades'));
 
 // Datebase action and routing.
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.c7vrvyh.mongodb.net/?retryWrites=true&w=majority`;
