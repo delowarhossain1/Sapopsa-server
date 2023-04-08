@@ -131,7 +131,7 @@ async function run() {
         app.delete('/api/slider/:id', verifyToken, verifyAdmin, async (req, res) => {
             try {
                 const id = req.params.id;
-                const query = { _id: ObjectId(id) }
+                const query = { _id: ObjectId(id)};
                 const result = await slidersCollection.deleteOne(query);
                 res.send(result);
             }
@@ -414,12 +414,14 @@ async function run() {
         app.post('/api/product', verifyToken, verifyAdmin, async (req, res) => {
             try {
                 const { title, price, thisIsFor, category, des, colors, size, specification } = req.body;
-               
                 
+                const productSize = JSON.parse(size);
+                const productColors = JSON.parse(colors);
+                const productSpec = JSON.parse(specification);
+
                 const gIMG = req.files['galleryIMG'];
                 const dir = __dirname + '/uploades/';
                 const imgURL = [];
-
 
                 gIMG?.forEach(img => {
                     const imgName = makeFileName(img?.name);
@@ -440,9 +442,9 @@ async function run() {
                         galleryIMG: imgURL,
                         description: des,
                         price: Number(price),
-                        size: size || [],
-                        colors: colors || [],
-                        specification: specification || [],
+                        size: productSize || [],
+                        colors: productColors || [],
+                        specification: productSpec || [],
                     }
 
                     const result = await productsCollection.insertOne(doc);
