@@ -60,7 +60,7 @@ async function run() {
         /******************************
          *  Website heading
          * ****************************/
-
+        
         // Get website heading
         app.get('/api/web-heading', async (req, res) => {
             try {
