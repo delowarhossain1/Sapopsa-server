@@ -699,6 +699,20 @@ async function run() {
             }
         });
 
+        // Update contact (mobile and email)
+        app.patch('/api/settings/contact', verifyToken, verifyAdmin, async (req, res) => {
+            try {
+                const contact = req.body;
+                const query = { _id: ObjectId('6436532d53d02eb0a8270c7d') };
+                const result = await settingCollection.updateOne(query, { $set: contact });
+
+                res.send(result);
+            }
+            catch (err) {
+                res.send({ err });
+            }
+        });
+
     }
     finally {
 
