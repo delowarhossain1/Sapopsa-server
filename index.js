@@ -14,9 +14,9 @@ const hostURL = process.env.HOST_URL;
 const app = express();
 
 // Middlewares
-app.use(express.json({limit: '50mb'}));
-app.use(bodyParser.json({limit: '50mb'}));
-app.use(bodyParser.urlencoded({limit: '50mb', extended: true, parameterLimit:50000}));
+app.use(express.json({ limit: '50mb' }));
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true, parameterLimit: 50000 }));
 app.use(cors());
 app.use(fileUpload());
 app.use('/api/images', express.static('uploades'));
@@ -37,7 +37,7 @@ async function run() {
         const productsCollection = dataBase.collection('products');
         const usersCollection = dataBase.collection('users');
         const ordersCollection = dataBase.collection('orders');
-        const settingCollection = dataBase.collection('setting');
+        const settingCollection = dataBase.collection('settings');
 
 
         /******************************
@@ -57,57 +57,29 @@ async function run() {
             }
         };
 
-        /******************************
-         *  Website heading
-         * ****************************/
-        
-        // Get website heading
-        app.get('/api/web-heading', async (req, res) => {
-            try {
-                const query = { _id: ObjectId('63b5c60260d78d6022c1b330') };
-                const heading = await headingCollection.findOne(query);
-                res.send(heading);
-            }
-            catch (err) {
-                res.send({ err })
-            }
-        });
 
-        // Update websit heading (admin required)
-        app.patch('/api/web-heading', verifyToken, verifyAdmin, async (req, res) => {
+        // Search bar
+        app.get('/api/search', async (req, res) => {
             try {
-                const heading = req.body;
-                const query = { _id: ObjectId('63b5c60260d78d6022c1b330') };
-                const result = await headingCollection.updateOne(query, { $set: heading });
-                res.send(result);
+                const text = req.headers.search;
+                const products = await productsCollection.find({
+                    $or: [
+                        { title: { $regex: ".*" + text + ".*", $options: "i" } },
+                        { thisIsFor: { $regex: ".*" + text + ".*", $options: "i" } },
+                        { description: { $regex: ".*" + text + ".*", $options: "i" } },
+                        { category: { $regex: ".*" + text + ".*", $options: "i" } }
+                    ]
+                })
+                    .project({
+                        img: 1,
+                        title: 1,
+                        price: 1,
+                    })
+                    .toArray();
+                res.send(products);
             }
             catch (err) {
                 res.send({ err });
-            }
-        });
-
-        // Search bar
-        app.get('/api/search', async(req, res)=>{
-            try{
-                const text = req.headers.search;
-                const products = await productsCollection.find({
-                    $or : [
-                        {title : {$regex : ".*"+ text + ".*", $options : "i"}},
-                        {thisIsFor : {$regex : ".*"+ text + ".*", $options : "i"}},
-                        {description : {$regex : ".*"+ text + ".*", $options : "i"}},
-                        {category : {$regex : ".*"+ text + ".*", $options : "i"}}
-                    ]
-                })
-                .project({
-                    img: 1,
-                    title: 1,
-                    price: 1,
-                })
-                .toArray();
-                res.send(products);
-            }
-            catch(err){
-                res.send({err});
             }
         });
 
@@ -130,7 +102,7 @@ async function run() {
         app.delete('/api/slider/:id', verifyToken, verifyAdmin, async (req, res) => {
             try {
                 const id = req.params.id;
-                const query = { _id: ObjectId(id)};
+                const query = { _id: ObjectId(id) };
                 const result = await slidersCollection.deleteOne(query);
                 res.send(result);
             }
@@ -378,8 +350,8 @@ async function run() {
                     totalUsers,
                     totalOrders,
                     todaysOrders,
-                    users : latestUsers,
-                    orders : latestOrders,
+                    users: latestUsers,
+                    orders: latestOrders,
                     successFulDelivered,
                     totalProducts,
                     totalCategories
@@ -413,7 +385,7 @@ async function run() {
         app.post('/api/product', verifyToken, verifyAdmin, async (req, res) => {
             try {
                 const { title, price, thisIsFor, category, des, colors, size, specification } = req.body;
-                
+
                 const productSize = JSON.parse(size);
                 const productColors = JSON.parse(colors);
                 const productSpec = JSON.parse(specification);
@@ -661,9 +633,9 @@ async function run() {
         */
 
         // Get app settings
-        app.get('/api/settings', verifyToken, async (req, res) => {
+        app.get('/api/settings', async (req, res) => {
             try {
-                const query = {_id : ObjectId('63edeebb11d0f727c6f20515')};
+                const query = { _id: ObjectId('6436532d53d02eb0a8270c7d') };
                 const settings = await settingCollection.findOne(query);
                 res.send(settings);
             }
@@ -672,21 +644,35 @@ async function run() {
             }
         });
 
+        // Update navbar title
+        app.patch('/api/settings/navbar-title', verifyToken, verifyAdmin, async (req, res) => {
+            try {
+                const navbarTitle = req.body;
+                const query = { _id: ObjectId('6436532d53d02eb0a8270c7d') };
+                const result = await settingCollection.updateOne(query, { $set: navbarTitle });
+                res.send(result);
+            }
+            catch (err) {
+                res.send({ err });
+            }
+
+        });
+
         // inset or update settings
-        app.patch('/api/settings', verifyToken, verifyToken, async(req, res)=>{
-            try{
+        app.patch('/api/settings', verifyToken, verifyAdmin, async (req, res) => {
+            try {
                 const settingInfo = req.body;
-                const query = {_id : ObjectId('63edeebb11d0f727c6f20515')};
-                const result = await settingCollection.updateOne(query, {$set : settingInfo});
+                const query = { _id: ObjectId('6436532d53d02eb0a8270c7d') };
+                const result = await settingCollection.updateOne(query, { $set: settingInfo });
 
                 // update heading status;
                 const headingQuery = { _id: ObjectId('63b5c60260d78d6022c1b330') };
-                const updateHeading = await headingCollection.updateOne(headingQuery, { $set: { isDispaly: settingInfo?.isNavbarTitleDisplay }});
+                const updateHeading = await headingCollection.updateOne(headingQuery, { $set: { isDispaly: settingInfo?.isNavbarTitleDisplay } });
 
                 res.send(result);
             }
-            catch(err){
-                res.send({err});
+            catch (err) {
+                res.send({ err });
             }
         });
 
