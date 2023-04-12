@@ -31,7 +31,6 @@ async function run() {
 
         // Database collection
         const dataBase = client.db('Sapopsa');
-        const headingCollection = dataBase.collection('websiteHeading');
         const slidersCollection = dataBase.collection('sliders');
         const categoriesCollection = dataBase.collection('categories');
         const productsCollection = dataBase.collection('products');
@@ -659,15 +658,11 @@ async function run() {
         });
 
         // inset or update settings
-        app.patch('/api/settings', verifyToken, verifyAdmin, async (req, res) => {
+        app.patch('/api/settings/shipping-navbarTitle-display', verifyToken, verifyAdmin, async (req, res) => {
             try {
                 const settingInfo = req.body;
                 const query = { _id: ObjectId('6436532d53d02eb0a8270c7d') };
                 const result = await settingCollection.updateOne(query, { $set: settingInfo });
-
-                // update heading status;
-                const headingQuery = { _id: ObjectId('63b5c60260d78d6022c1b330') };
-                const updateHeading = await headingCollection.updateOne(headingQuery, { $set: { isDispaly: settingInfo?.isNavbarTitleDisplay } });
 
                 res.send(result);
             }
