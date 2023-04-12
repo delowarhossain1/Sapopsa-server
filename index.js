@@ -671,6 +671,20 @@ async function run() {
             }
         });
 
+        // update about us
+        app.patch('/api/settings/about-us', verifyToken, verifyAdmin, async (req, res) => {
+            try {
+                const aboutUs = req.body;
+                const query = { _id: ObjectId('6436532d53d02eb0a8270c7d') };
+                const result = await settingCollection.updateOne(query, { $set: aboutUs });
+
+                res.send(result);
+            }
+            catch (err) {
+                res.send({ err });
+            }
+        })
+
     }
     finally {
 
