@@ -683,7 +683,21 @@ async function run() {
             catch (err) {
                 res.send({ err });
             }
-        })
+        });
+
+        // update update terms
+        app.patch('/api/settings/termsAndCondition', verifyToken, verifyAdmin, async (req, res) => {
+            try {
+                const termsAndCondition = req.body;
+                const query = { _id: ObjectId('6436532d53d02eb0a8270c7d') };
+                const result = await settingCollection.updateOne(query, { $set: termsAndCondition });
+
+                res.send(result);
+            }
+            catch (err) {
+                res.send({ err });
+            }
+        });
 
     }
     finally {
