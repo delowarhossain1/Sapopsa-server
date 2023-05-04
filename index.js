@@ -192,6 +192,21 @@ async function run() {
             }
         });
 
+        // update category (admin verified)
+        app.patch('/api/category/:id', verifyToken, verifyAdmin, async (req, res) => {
+            try {
+                const id = req.params.id;
+                const query = { _id: ObjectId(id) };
+                const doc = { title: req.body.title };
+
+                const result = await categoriesCollection.updateOne(query, { $set: doc });
+                res.send(result);
+            }
+            catch (err) {
+                res.send({ message: err });
+            }
+        });
+
         // Get category for menu
         app.get('/api/categories-list', async (req, res) => {
             try {
