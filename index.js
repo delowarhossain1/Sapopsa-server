@@ -398,11 +398,12 @@ async function run() {
         // Add new product (admin required)
         app.post('/api/product', verifyToken, verifyAdmin, async (req, res) => {
             try {
-                const { title, price, thisIsFor, category, des, colors, size, specification } = req.body;
+                const { title, price, thisIsFor, category, des, colors, size, specification, sizeChart, regularPrice } = req.body;
 
                 const productSize = JSON.parse(size);
                 const productColors = JSON.parse(colors);
                 const productSpec = JSON.parse(specification);
+                const productSizeChart = JSON.parse(sizeChart);
 
                 const gIMG = req.files['galleryIMG'];
                 const dir = __dirname + '/uploades/';
@@ -426,10 +427,12 @@ async function run() {
                         img: imgURL[0],
                         galleryIMG: imgURL,
                         description: des,
-                        price: Number(price),
+                        price: Number(price) || 1,
                         size: productSize || [],
                         colors: productColors || [],
                         specification: productSpec || [],
+                        regularPrice : Number(regularPrice) || 1,
+                        sizeChart : productSizeChart
                     }
 
                     const result = await productsCollection.insertOne(doc);
