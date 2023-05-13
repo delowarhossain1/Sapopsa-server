@@ -269,6 +269,7 @@ async function run() {
                         img: 1,
                         title: 1,
                         price: 1,
+                        regularPrice : 1
                     })
                     .toArray();
 
