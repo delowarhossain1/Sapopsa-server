@@ -73,6 +73,7 @@ async function run() {
                         img: 1,
                         title: 1,
                         price: 1,
+                        regularPrice: 1
                     })
                     .toArray();
                 res.send(products);
@@ -289,6 +290,7 @@ async function run() {
                         img: 1,
                         title: 1,
                         price: 1,
+                        regularPrice: 1
                     })
                     .toArray();
 
@@ -321,6 +323,35 @@ async function run() {
                 res.send(result)
             }
             catch (err) {
+                res.send({ err });
+            }
+        });
+
+        // Update product info (admin veryfied)
+        app.patch('/api/product/:id', verifyToken, verifyAdmin, async (req, res) => {
+            try {
+                const id = req.params.id;
+                const query = { _id: ObjectId(id) };
+                const { title, thisIsFor, price, regularPrice, specification, category, description, } = req.body;
+
+                const p = await productsCollection.findOne(query);
+
+                const doc = {
+                    title : title || p.title,
+                    thisIsFor : thisIsFor || p.thisIsFor,
+                    price : price || p.price,
+                    regularPrice : regularPrice || p.regularPrice,
+                    specification: specification || p.specification,
+                    category : category || p.category,
+                    description : description || p.description,
+                }
+
+                // update product info
+                const result = await productsCollection.updateOne(query, {$set : doc});
+
+                res.send(result);
+            }
+            catch(err){
                 res.send({ err });
             }
         });
@@ -431,8 +462,8 @@ async function run() {
                         size: productSize || [],
                         colors: productColors || [],
                         specification: productSpec || [],
-                        regularPrice : Number(regularPrice) || 1,
-                        sizeChart : productSizeChart
+                        regularPrice: Number(regularPrice) || 1,
+                        sizeChart: productSizeChart
                     }
 
                     const result = await productsCollection.insertOne(doc);
