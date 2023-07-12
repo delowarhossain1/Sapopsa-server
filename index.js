@@ -1,29 +1,27 @@
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const express = require('express');
-const cors = require('cors');
+const app = require('./app');
+
 const jwt = require('jsonwebtoken');
 const env = require('dotenv').config();
 const PORT = process.env.PORT || 5000;
-const bodyParser = require('body-parser')
+
 const verifyToken = require('./middleware/verifyToken');
-const fileUpload = require('express-fileupload');
+
 const makeFileName = require('./utilities/makeFileName');
 const imageUpload = require('./utilities/imageUpload');
 
 const hostURL = process.env.HOST_URL;
-const app = express();
 
-// Middlewares
-app.use(express.json({ limit: '50mb' }));
-app.use(bodyParser.json({ limit: '50mb' }));
-app.use(bodyParser.urlencoded({ limit: '50mb', extended: true, parameterLimit: 50000 }));
-app.use(cors());
-app.use(fileUpload());
-app.use('/api/images', express.static('uploades'));
 
-// Datebase action and routing.
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.c7vrvyh.mongodb.net/?retryWrites=true&w=majority`;
-const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.qkab8ze.mongodb.net/?retryWrites=true&w=majority`;
+
+const client = new MongoClient(uri, {
+    serverApi: {
+        version: ServerApiVersion.v1,
+        strict: true,
+        deprecationErrors: true,
+    }
+});
 
 async function run() {
     try {
@@ -269,7 +267,7 @@ async function run() {
                         img: 1,
                         title: 1,
                         price: 1,
-                        regularPrice : 1,
+                        regularPrice: 1,
                     })
                     .toArray();
 
@@ -338,21 +336,21 @@ async function run() {
                 const p = await productsCollection.findOne(query);
 
                 const doc = {
-                    title : title || p.title,
-                    thisIsFor : thisIsFor || p.thisIsFor,
-                    price : price || p.price,
-                    regularPrice : regularPrice || p.regularPrice,
+                    title: title || p.title,
+                    thisIsFor: thisIsFor || p.thisIsFor,
+                    price: price || p.price,
+                    regularPrice: regularPrice || p.regularPrice,
                     specification: specification || p.specification,
-                    category : category || p.category,
-                    description : description || p.description,
+                    category: category || p.category,
+                    description: description || p.description,
                 }
 
                 // update product info
-                const result = await productsCollection.updateOne(query, {$set : doc});
+                const result = await productsCollection.updateOne(query, { $set: doc });
 
                 res.send(result);
             }
-            catch(err){
+            catch (err) {
                 res.send({ err });
             }
         });
